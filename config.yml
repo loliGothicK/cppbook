@@ -317,7 +317,7 @@ texstyle: ["reviewmacro"]
 # LaTeX用のdocumentclassを指定する
 # オプションについてはsty/README.mdを参照
 # デフォルトは印刷用。電子配布版を作るには media=ebook とする
-texdocumentclass: ["review-jsbook", "media=ebook"]
+texdocumentclass: ["review-jsbook", "media=print"]
 #
 # LaTeX用のコマンドを指定する
 # texcommand: "uplatex"
