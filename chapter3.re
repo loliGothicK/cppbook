@@ -2,9 +2,12 @@
 
 継承は便利だが、使い方を誤るとひどいコードを生み出しがちである。
 
+//image[dot_schema_all_modules][複雑な継承の例][scale=0.5]{ 
+//}
+
 == 継承を使いこなせない
 
-初心者ならわかりますが、仕事でC++を書いている人でも継承が使いこなせないプログラマはいます。
+仕事でC++を書いている人でも継承が使いこなせないプログラマはいます。
 
 具体的には以下のようなコードを書いてしまいます:
 
@@ -12,8 +15,11 @@
  * override指定しないvirtual関数を書く
  * 継承関係が複雑すぎる
 
-//image[dot_schema_all_modules][複雑な継承の例][scale=0.5]{ 
-//}
+final, overrideはC++11から入った文脈依存キーワードです。
+基本的にすべての仮想関数はoverride指定すべきであり、指定しないのはサボりです。
+また、final指定されていない仮想クラスが仮想デストラクタを持たない場合、
+スライス問題によりリソースがリークし、デバック困難なバグを生み出します。
+このあたりのことができていないのは勉強不足としか言いようがありません。
 
 == 継承乱舞
 
@@ -36,13 +42,10 @@ Policyクラスもコンポジションの一種です。
 
 //emlist[][cpp]{
 namespace std {
-    template <
-        class Key,
-        class T,
+    template <class Key, class T,
         class Compare = less<Key>,
         class Allocator = allocator<pair<const Key, T> >
-    >
-    class map;
+    > class map;
 }
 //}
 

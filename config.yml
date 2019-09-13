@@ -66,12 +66,12 @@ ill: ["俺九番"]
 # a-trl, trl: 翻訳者
 
 # 刊行日(省略した場合は実行時の日付)
-date: 2019-07-11
+date:
 # 発行年月。YYYY-MM-DD形式による配列指定。省略した場合はdateを使用する
 # 複数指定する場合は次のように記述する
 # [["初版第1刷の日付", "初版第2刷の日付"], ["第2版第1刷の日付"]]
 # 日付の後ろを空白文字で区切り、任意の文字列を置くことも可能。
-history: [["2019-07-11"]]
+history: []
 # 権利表記(配列で複数指定可)
 # rights: (C) 2016-2019 Re:VIEW Developers
 # description: 説明
@@ -317,7 +317,7 @@ texstyle: ["reviewmacro"]
 # LaTeX用のdocumentclassを指定する
 # オプションについてはsty/README.mdを参照
 # デフォルトは印刷用。電子配布版を作るには media=ebook とする
-texdocumentclass: ["review-jsbook", "media=print,paper=a5"]
+texdocumentclass: ["review-jsbook", "media=print"]
 #
 # LaTeX用のコマンドを指定する
 # texcommand: "uplatex"
