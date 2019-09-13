@@ -66,7 +66,7 @@ ill: ["俺九番"]
 # a-trl, trl: 翻訳者
 
 # 刊行日(省略した場合は実行時の日付)
-date:
+date: 2019-9-22
 # 発行年月。YYYY-MM-DD形式による配列指定。省略した場合はdateを使用する
 # 複数指定する場合は次のように記述する
 # [["初版第1刷の日付", "初版第2刷の日付"], ["第2版第1刷の日付"]]
@@ -104,7 +104,7 @@ stylesheet: ["style.css"]
 # htmlversion: 5
 
 # 目次として抽出する見出しレベル
-toclevel: 3
+toclevel: 2
 
 # 採番の設定。採番させたくない見出しには「==[nonum]」のようにnonum指定をする
 #
@@ -317,7 +317,7 @@ texstyle: ["reviewmacro"]
 # LaTeX用のdocumentclassを指定する
 # オプションについてはsty/README.mdを参照
 # デフォルトは印刷用。電子配布版を作るには media=ebook とする
-texdocumentclass: ["review-jsbook", "media=print"]
+texdocumentclass: ["review-jsbook", "media=ebook"]
 #
 # LaTeX用のコマンドを指定する
 # texcommand: "uplatex"
@@ -343,7 +343,7 @@ pdfmaker:
   # TeX版で利用する表紙画像。
   # 仕上がりサイズ+塗り足し3mmありのPDFまたはIllustratorファイル（PDF互換オプション付き）を推奨。
   # 拡縮はされず「そのまま」貼り付けられる
-  coverimage: cover-a5.ai
+  coverimage: cover.jpg
   #
   # TeXコンパイル前に実行するプログラム。変換後のTeXソースを調整したいときに使用する。
   # 渡される引数1=作業用展開ディレクトリ、引数2=呼び出しを実行したディレクトリ

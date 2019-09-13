@@ -112,6 +112,58 @@ const auto& [a,b,c] = tpl;
 
 要素が参照型の場合、tupleの要素型がそのまま手に入ることになります。
 
+== constexpr if
+
+別に難しい機能じゃないが、ハマる人が続出しているので解説することにしました（cpprefjp読めでもいいのですが…）。
+
+問題のコードは以下です:
+
+//emlist[][cpp]{
+template <class T>
+void func() {
+  if constexpr (std::integral_v<T>) {
+    // ...
+  }
+  else {
+    // Tが整数型じゃないときのみ評価されてほしい
+    // 実際は常に評価される
+    static_assert(false);
+  }
+}
+//}
+
+constexpr ifは実行されないテンプレートの実体化を防ぐ (依存名の検証をしない) だけで、非依存名は検証されるのです。
+この例のstatic_assertに渡す条件式はテンプレートパラメータに依存していないので、テンプレートの宣言時に検証されてエラーになります。
+
+解決方法は簡単でstatic_assertに渡す条件式が依存名ならばテンプレートの宣言時に検証されず、テンプレート実体化まで評価を遅らせることができます。
+
+//emlist[][cpp]{
+template <class...> inline constexpr bool always_false_v = false;
+
+template <class T>
+void func() {
+  if constexpr (std::integral_v<T>) {
+    // ...
+  }
+  else {
+    static_assert(always_false_v<T>);
+  }
+}
+//}
+
+@<code>{always_false_v<T>}は@<code>{T}に依存する式なので、依存名です。
+
+また、つぎのようにラムダ式を使うことで評価を遅らせるという作戦も考えられます。
+
+//emlist[][cpp]{
+template <typename T>
+void f(T) {
+  if constexpr (std::is_same_v<T, int>) {
+    static_assert([]{ return false; }());
+  }
+}
+//}
+
 == この章のまとめ
 
  * Forwarding Referenceを使う場合はオーバーロードに型制約を設ける
