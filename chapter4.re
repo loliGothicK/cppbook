@@ -112,19 +112,133 @@ const auto& [a,b,c] = tpl;
 
 要素が参照型の場合、tupleの要素型がそのまま手に入ることになります。
 
-== constexpr if
+== Two Phase Lookup (二段階名前検索)
 
-別に難しい機能じゃないが、ハマる人が続出しているので解説することにしました（cpprefjp読めでもいいのですが…）。
+C++には二段階名前検索という機能があります。
+これは名前の検索が二段階で行われることによって直感的な名前の解決がなされる。
 
-問題のコードは以下です:
+=== 二段階名前検索とその必要性
+
+二段階名前検索は次のような状況で必要となる。
+
+//emlist[][cpp]{
+#include <cstdio>
+
+void func(void*) { std::puts("The call resolves to void*") ;}
+
+template<typename T> void g(T x) {
+    func(0);
+}
+
+void func(int) { std::puts("The call resolves to int"); }
+
+int main() {
+    g(3.14);
+}
+//}
+
+この@<code>{g(3.14)}、テンプレート定義の時点で、テンプレートを書いた人は既に知られている@<code>{func(void*)}を期待しているでしょう。
+ここで、新たに参加したプログラマが@<code>{func(int)}を追加してしまったとしましょう。
+二段階名前検索がない場合は@<code>{g(3.14)}の時点から見えているすべての関数が検索され、@<code>{func(int)}に解決してしまいます。
+一回目の検索によって@<code>{g(T)}から見えている名前が検索され、さらに二回目の検索によって実体化が行われます。
+
+この仕組みを@<b>{Two Phase Lookup (二段階名前検索)}といいます。
+
+=== 実体化の遅延の悪用
+
+閉区間を表す@<code>{interval<T>}型を考えます。
+この型に足し算を実装します。
+
+//emlist[][cpp]{
+template <class T> struct interval { T low, up; };
+
+template <class T>
+interval<T> operator+(interval<T> lhs, interval<T> rhs)
+    { return { lhs.low + rhs.low, lhs.up + rhs.up }; }
+//}
+
+数値@<m>{x}は一点区間@<m>{[x, x]}と考えることができます。
+したがって、@<code>{interval<T> + T}や@<code>{T + interval<T>}も作りたいと思うでしょう。
+
+//emlist[][cpp]{
+template <class T>
+interval<T> operator+(T lhs, interval<T> rhs)
+    { return { lhs + rhs, lhs.up + rhs.up }; }
+template <class T>
+interval<T> operator+(interval<T> lhs, T rhs)
+    { return { lhs.low + rhs, lhs.up + rhs }; }
+//}
+
+ここで、一旦深呼吸をしましょう。
+C++では組み込みの演算で@<code>{1 + 1.0}は許可されています。
+
+この挙動を少し拡張して、@<code>{interval<T> + U}や@<code>{U + interval<T>}を
+@<code>{interval<T>}（interval型に合わせる）ようにしたいと思います。
+
+二段階名前検索を悪用すればややこしいメタプログラミングは必要ではありません。
+とはいえ、多少の準備が必要です。
+
+まず、以下のように@<code>{interval}に依存型名を追加します:
+
+//emlist[][cpp]{
+template <class T> struct interval {
+    using value_type = T;
+    T low, up;
+};
+//}
+
+@<code>{interval<T>::value_type}のようなものを@<b>{依存名(依存型名)}といいます。
+@<code>{T}がテンプレートの場合、@<code>{value_type}は@<code>{interval<T>}に依存していて、@<code>{interval<T>}が決定すると導出されます。
+ただし、@<code>{interval<double>::value_type}は依存名ではありません、@<code>{interval<double>}から即座に@<code>{value_type}が@<code>{double}とわかるためです。
+
+//emlist[][cpp]{
+template <class T> struct interval {
+    using value_type = T;
+    T low, up;
+};
+//}
+
+続いて、足し算を修正します。
+
+//emlist[][cpp]{
+template <class T>
+interval<T> operator+(interval<T> lhs, interval<T> rhs)
+    { return { lhs.low + rhs.low, lhs.up + rhs.up }; }
+
+template <class T>
+interval<T> operator+(typename interval<T>::value_type lhs, interval<T> rhs)
+    { return { lhs + rhs, lhs.up + rhs.up }; }
+template <class T>
+interval<T> operator+(interval<T> lhs, typename interval<T>::value_type rhs)
+    { return { lhs.low + rhs, lhs.up + rhs }; }
+//}
+
+これは@<code>{typename interval<T>::value_type}が依存名であり、関数テンプレートの実引数からの型推論の対象ではないことを利用しています。
+次のコードを考えます:
+
+//emlist[][cpp]{
+  interval<int> itv{1, 2};
+  auto res = itv + 1.0;
+//}
+
+まず、@<code>{operator+(interval<T> lhs, typename interval<T>::value_type rhs)}が検索されます。
+左オペランドから@<code>{interval<T>}は@<code>{interval<int>}と推論されます。
+続いて、二段階名前検索によって依存名が解決され、@<code>{typename interval<T>::value_type}が@<code>{int}と導出されます。
+
+最終的に、@<code>{1.0 (double)}は@<code>{int}に変換可能ですので、オーバーロード解決に成功します！
+
+言語機能の悪用ってすごく楽しいですよね！
+
+=== constexpr if
+
+別に難しい機能じゃないが、二段階名前検索でハマる人が続出しているので解説することにしました（cpprefjp読めでもいいのですが…）。
+
+問題のコードはつぎのようなものです:
 
 //emlist[][cpp]{
 template <class T>
 void func() {
-  if constexpr (std::integral_v<T>) {
-    // ...
-  }
-  else {
+  if constexpr (!std::integral_v<T>) {
     // Tが整数型じゃないときのみ評価されてほしい
     // 実際は常に評価される
     static_assert(false);
@@ -168,3 +282,4 @@ void f(T) {
 
  * Forwarding Referenceを使う場合はオーバーロードに型制約を設ける
  * 新しい機能を使う前に、@<code>{cppreference.com}で一度調べる
+ * constexpr ifで@<code>{static_assert}を使う場合は依存式を使う

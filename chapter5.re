@@ -1,19 +1,23 @@
 = オーバーロード解決
 
-@<code>{テンプレートよりよく使うけど、テンプレートよりよくわからない！}
+@<b>{テンプレートよりよく使うけど、テンプレートよりよくわからない！}
 
 C++には同じ名前の関数を違う型の引数で実装できるオーバーロードという機能があります。
 「オーバーロード解決」は関数の呼び出し式が与えられたときにどの実装を呼び出すのかを選択するプロセスの名称です。
 
 //emlist[][cpp]{
-void func(int); // #1
-void func(double); // #2
+void func(int);     // #1
+void func(double);  // #2
 
 int main() {
-    func(1); // calls #1
-    func(0.0); // calls #2
+    func(1);    // calls #1
+    func(0.0);  // calls #2
 }
 //}
+
+この付録ではオーバーロードの詳細を解説します。
+
+== オーバーロード解決順位
 
 オーバーロード解決の優先付けはPartial Orderという順序で順序付けされます。
 Partial Orderは@<code>{a < b}も@<code>{a > b}も@<code>{false}であっても、
@@ -25,7 +29,7 @@ Partial Orderは@<code>{a < b}も@<code>{a > b}も@<code>{false}であっても�
 
 //emlist[][cpp]{
 void func(int, double); // #1
-void func(long, int); // #2
+void func(long, int);   // #2
 
 int main() {
     func(1, 1); // ambiguous
@@ -38,11 +42,9 @@ int main() {
 結果、コンパイラはどちらを呼べばよいのかを判断できず、オーバーロード解決は曖昧となります。
 
 読者の中にはdoubleよりlongのほうがintに近いのではないかと思われる方がいらっしゃるかもしれないですが、
-C++は@<b>{オーバーロード距離}のようなものを考慮するようにはなっていないため、完全に優先順位がつかない場合はすべて曖昧となります。
+C++はオーバーロード距離のようなものを考慮するようにはなっていないため、完全に優先順位がつかない場合はすべて曖昧となります。
 
-== オーバーロード解決順位
-
-優先順位という言葉を定義せずに使ってしまっていました。
+さて、優先順位という言葉を定義せずに使ってしまっていました。
 オーバーロードの優先順位はどのように設定されているのでしょう？
 ここでは、簡略化された優先順位を紹介します。
 この順位にテンプレートは含まれていないことに注意してください（テンプレートに関してはあとで説明することにします）。
@@ -130,7 +132,7 @@ struct watch_t {
 
 int main() {
     watch_t watch{};
-    watch_t const_watch{};
+    const watch_t const_watch{};
     watch.tick();       // calls #1
     const_watch.tick(); // calls #2
     watch_t{}.tick();   // calls #3
@@ -142,9 +144,9 @@ int main() {
 == テンプレート VS 特殊化 VS 非テンプレート
 
 //emlist[][cpp]{
-template <class T> void f(T); #1
+template <class T> void f(T); // #1
 void f(int); // #2
-template <> void f<double>(double); #3
+template <> void f<double>(double); // #3
 
 int main() {
     f(1);       // calls #2
@@ -177,7 +179,7 @@ C++11から、@<code>{std::initializer_list}というものでbraced-init-list�
 #include <initializer_list>
 #include <iostream>
 
-void func(std::initializer_list<int>) { std::cout << "#1\n"; }
+void func(std::initializer_list<int>) { std::cout << "initializer_list!\n"; }
 
 int main() {
     func({1, 2, 3});
@@ -214,8 +216,8 @@ int main() {
 
 1つめは@<b>{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}を出力します。
 2つめはそうではありません、@<b>{33}は文字として解釈されます（ASCIIを前提にすれば出力は@<b>{!a}になります）。
-
 これは、波括弧で初期化した場合@<code>{std::initializer_list}を引数にもつコンストラクタが優先的に呼ばれるという仕様によります。
+@<code>{std::string}は文字のリストを@<code>{std::initializer_list<char>}で受け取るコンストラクタを持っており、それが優先的に呼ばれたというわけです。
 
 == テンプレートを加えたオーバーロード順位
 
