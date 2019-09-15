@@ -21,11 +21,10 @@ int main() {
 
 オーバーロード解決の優先付けはPartial Orderという順序で順序付けされます。
 Partial Orderは@<code>{a < b}も@<code>{a > b}も@<code>{false}であっても、
-@<code>{a == b}が@<code>{true}ではない、つまり比較不能という状態が存在する。
+@<code>{a == b}が@<code>{true}ではない、つまり比較不能という状態が存在します。
 
-オーバーロードの優先順位はPartial Orderで順序付けされる。
 ある関数のオーバーロードの候補（overload candidates）が順序比較不能であるとき、
-オーバーロード解決は曖昧となり、コンパイルに失敗する。
+オーバーロード解決は曖昧となり、コンパイルに失敗します。
 
 //emlist[][cpp]{
 void func(int, double); // #1
@@ -47,16 +46,16 @@ C++はオーバーロード距離のようなものを考慮するようには�
 さて、優先順位という言葉を定義せずに使ってしまっていました。
 オーバーロードの優先順位はどのように設定されているのでしょう？
 ここでは、簡略化された優先順位を紹介します。
-この順位にテンプレートは含まれていないことに注意してください（テンプレートに関してはあとで説明することにします）。
+この順位にテンプレートは含まれてません（あとで説明します）。
 
- * 1. 完全なマッチ: すべての実引数の型が仮引数宣言の型と修飾子を含めて完全に一致する場合。
+ * 1. 完全なマッチ: すべての実引数の型が修飾子を含めて完全に一致する場合。
  * 2. 微調整によるマッチ: 1.に加えて非constからconstへの変換、配列から配列の先頭要素へのポインタへの変換などを許可してマッチする場合。
  * 3. プロモーションによるマッチ: 2.に加えてintからlong、floatからdoubleなど、安全かつ暗黙に変換を許可してマッチする場合。
  * 4. 標準変換のみによるマッチ: 3.に加えてintからfloatやpublicな基底クラスへの変換を許可してマッチする場合。暗黙の変換演算子による変換や呼び出し可能なコンストラクタによる変換を含まない。
- * 5. ユーザー定義変換によるマッチ: 4.に加えて暗黙の変換演算子による変換や呼び出し可能なコンストラクタによる変換など、すべての変換を許可してマッチする場合。
+ * 5. ユーザー定義変換によるマッチ: 4.に加えて暗黙の変換演算子による変換やコンストラクタによる変換など、すべての変換を許可してマッチする場合。
  * 6. ellipsis (...): ほぼすべての型は省略記号にマッチする（ただし、非トリビアルなコピーコンストラクタを持つクラスはマッチしない）。
 
-かなり簡略化されていますが、この順番で考えられない場合に出会うことはそうそうないでしょう (initializer_listが例外だが、ここでは割愛する)。
+かなり簡略化されていますが、この順番で考えられない場合に出会うことはそうそうないでしょう (initializer_listが例外だが、ここでは割愛します)。
 
 以下にいくつかの小さな例を示します:
 
@@ -98,14 +97,14 @@ f3(1); // # calls #5
 
 == メンバ関数の暗黙の引数
 
-メンバ関数は@<code>{*this}という暗黙の引数を第一引数に持つ。
+メンバ関数は@<code>{*this}という暗黙の引数を第一引数に持つ（「暗黙の引数」というのはここでしか出てこないであろう造語です）。
 @<code>{MyClass}のメンバ関数が持つ暗黙の第一引数の型は非constメンバ関数の場合@<code>{MyClass&}であり、
-constメンバ関数の場合@<code>{MyClass const&}である。
+constメンバ関数の場合@<code>{MyClass const&}です。
 C++11からは右辺値のバージョンが追加された。
 右辺値の@<code>{MyClass}のメンバ関数が持つ暗黙の第一引数の型は非constメンバ関数の場合@<code>{MyClass&&}であり、
 constメンバ関数の場合@<code>{MyClass const&&}である（const版を使うことはないだろうが）。
 
-右辺値参照を引数に取ると、左辺値実引数にはマッチしなくなり、右辺値にのみマッチするようになる。
+右辺値参照を引数に取ると、左辺値実引数にはマッチしなくなり、右辺値にのみマッチするようにります。
 
 //emlist[][cpp]{
 struct S {};
@@ -115,19 +114,32 @@ void func(S&&); // #2
 
 int main() {
     S s{};
-    func(s);    // calls #1
-    func(S{});  // calls #2
+    void func(s);    // calls #1
+    void func(S{});  // calls #2
 }
 //}
 
-これはメンバ関数の暗黙の第一引数でも同じである。
+メンバ関数でも同じことができます。
+メンバ関数ではつぎのように@<code>{()}につづけて修飾子を書きます。
+この修飾子がメンバ関数の暗黙の引数に対するオーバーロードの文法です。
 
 //emlist[][cpp]{
 struct watch_t {
-    tick() &;      // #1
-    tick() const&; // #2
-    tick() &&;     // #3
-    tack() const&; // #4
+    void tick() &;      // #1
+    void tick() const&; // #2
+    void tick() &&;     // #3
+    void tack() const&; // #4
+};
+//}
+
+これを呼び出すとつぎのようにオーバーロードが選択されます。
+
+//emlist[][cpp]{
+struct watch_t {
+    void tick() &;      // #1
+    void tick() const&; // #2
+    void tick() &&;     // #3
+    void tack() const&; // #4
 };
 
 int main() {
@@ -173,13 +185,12 @@ template<typename T> void f(const std::vector<T>&&);
 
 == initializer_list
 
-C++11から、@<code>{std::initializer_list}というものでbraced-init-listというものを受け取れるようになりました。
+C++11から、@<code>{std::initializer_list}が追加されました。
 
 //emlist[][cpp]{
 #include <initializer_list>
-#include <iostream>
 
-void func(std::initializer_list<int>) { std::cout << "initializer_list!\n"; }
+void func(std::initializer_list<int>);
 
 int main() {
     func({1, 2, 3});
@@ -190,16 +201,37 @@ int main() {
 
 //emlist[][cpp]{
 #include <initializer_list>
-#include <iostream>
 
-void func(std::initializer_list<int>) { std::cout << "#1\n"; }
-void func(std::initializer_list<char>) { std::cout << "#2\n"; }
+void func(std::initializer_list<int>); // #1
+void func(std::initializer_list<char>); // #2
 
 int main() {
-    func({'a','a','a'});    // prints #2
-    func({'a','a','a', 1}); // prints #1
+    func({'a','a','a'});    // calls #2
+    func({'a','a','a', 1}); // calls #1
 }
 //}
+
+@<code>{func({'a','a','a'})}は@<code>{std::initializer_list<char>}に完全マッチします。
+@<code>{func({'a','a','a', 1}))}は型変換が必要です。
+@<code>{int -> char}は標準変換が必要ですが、@<code>{char -> int}はプロモーションで可能ですのでこちらが最小の型変換です。
+よって、@<code>{std::initializer_list<int>}にオーバーロードが解決します。
+
+つぎのようなオーバーロードは、
+@<code>{int -> double}、
+@<code>{double -> int}は共に標準変換であるためオーバーロードが曖昧となり、解決しません。
+
+
+//emlist[][cpp]{
+#include <initializer_list>
+
+void func(std::initializer_list<int>);  // #1
+void func(std::initializer_list<double>); // #2
+
+int main() {
+    func({1,2,1.0}); // ambiguous
+}
+//}
+
 
 つぎのコードを実行すると何を出力するでしょうか？
 
