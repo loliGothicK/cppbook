@@ -1,82 +1,82 @@
-= はじめに
+= Introduction
 
-本書はプログラミングを始めたばかりの人を対象としません。
-初心者を脱し、その先へと進むプログラマへのメッセージをまとめたものです。
+This book is not intended for people who are just beginning programming.
+It is a compilation of messages for programmers who leave beginners and move on.
 
-本書では特にことわりがない限りC++17を前提とします。
+This book assumes C ++ 17 unless otherwise noted.
 
-仕事をしている中で「もっとこうしたほうがいい」というアドバイスをすることや、
-「この機能はこういう仕組みなんだよ」と解説をする機会が多くあります。
+To give advice that "more like this" while working,
+There are many opportunities to explain, "This is how this function works."
 
-幾度も説明するうちに、本でも書いたほうがいいのではないかと思い、筆をとった次第です。
+As I explained it many times, I thought I should write it in a book, so I took the brush.
 
-後半、サンプルコードのコメントの大部分が英語となっております。
-油断しておりました。
-まあ、C++プログラマの大部分が英語が読めると信じております。
-読めない人はコードから気合で察してください（すいません）。
+In the latter half, most of the comments in the sample code are in English.
+I was careless.
+Well, I believe most C ++ programmers can read English.
+If you can't read it, please feel free from the code (sorry).
 
-== まえおき
+== Maeki
 
-僕は「いなむのみたま」と申します。
+My name is Inamu Mitama.
 
-僕の得意分野はライブラリプログラミングです。
-ライブラリを作るためには、アプリケーションだけを作るなら一生使わないようなC++の機能を山のように使うことになります。
-なので、一般のC++プログラマより少しだけC++に詳しいです。
+My area of ​​expertise is library programming.
+To create a library, you have to pile up a lot of C ++ features that you wouldn't use for the rest of your application.
+So I'm a little more familiar with C ++ than a regular C ++ programmer.
 
-C++の守り神として日々C++のコンパイラをいじめています。
-いなむのみたまのかみ(@mitama_rs)という名前でTwitterに生息しており、Twitterで迷えるC++プログラマを救う活動をしています。
+As a guardian of C ++, I am bullying C ++ compilers every day.
+It lives on Twitter under the name Inamu no Mitama no Kakami (@mitama_rs) and is working to save C ++ programmers who are lost on Twitter.
 
-さて、突然ですがぼくの苦労話です。
-とあるベンチャー企業に雇われてC++やらRustやらを書いて一年が経ちました。
-ジョブチェンジしたてのC++プログラマに少々の苦悩が立ちはだかりました。
+By the way, suddenly, this is my story.
+It has been a year since I was hired by a venture company and wrote C ++ and Rust.
+The C ++ programmer who had just changed jobs had some troubles.
 
- * スマートポインタ使ってないどころか、newですらなくてmallocを使うソースコード
- * 完全下位互換STLともいうべき、オレオレ実装
- * 3万を超えるヘッダを有し、そびえ立つライブラリ
- * ドキュメントもないし意味不明な過去の遺産
- * 「templateは難しいからできるだけ使うな」とか言う人
- * 全然自動化されてないCMakeLists
+ * Source code that uses malloc, not even smart pointers, even new
+ * Completely backward compatible STL, oleore implementation
+ * A towering library with over 30,000 headers
+ * No documentation or meaningless past heritage
+ * People who say "use templates as much as possible because they are difficult"
+ * CMakeLists not automated at all
 
-というかだいたいの苦悩はOpen Cascade Technologyというライブラリが原因です。
+Most of the suffering is caused by a library called Open Cascade Technology.
 
-C++に限らず、汚いコードは非常に汚いです。
-「もうお前C++書くな」と言いたいこともあります。
+Not just C ++, dirty code is very dirty.
+Sometimes I want to say "Don't write C ++ anymore".
 
-汚いコードを書いているプログラマは決してサボっているわけではありません。
-それどころか、僕よりも何倍もの時間コードを書いているように見えます。
-ライブラリを使えばいい処理を手で書いたり、
-同じような少し違う処理をたくさん書いたり、
-意味のない条件分岐を書いたり、
-使わない変数を書いたり、
-とにかくありとあらゆる間違った技法を凝らしてコーディングを複雑にしているのです。
+Programmers who write dirty code aren't in any way out.
+On the contrary, it looks like I'm writing time code many times more than I do.
+If you use the library, you can write the processing by hand,
+I wrote a lot of similar, slightly different processing,
+Writing meaningless conditional branches,
+Write unused variables,
+It's all about doing all the wrong techniques to complicate coding.
 
-悪いことに、CMakeListsをキレイにしたり、テストを充実させるのに当てる時間もありません。
-実装で手一杯なのですから。
+Worse, we don't have the time to clean up the CMakeLists or enrich our tests.
+It's full of implementation.
 
-幸いにもベンチャー企業はとても動きやすいです、クソコードを見たら焼き尽くすことにしています。
-すでにあるコードを見て新人が真似をするなんてことになったら耐えられません。
-クソコードを1行放置するとそのうち100行になると思ってやってます。
-ぶっちゃけると本書は、そのときの僕が流した涙やついたため息をまとめたものです。
-幸いなことに、教育とレビューで生まれる前にクソコードを滅ぼす程度にはチームが安定してきたのでこの本の続編が執筆されることはないでしょう。
+Fortunately venture companies are very mobile, so I'm going to burn out the shit code.
+It's unbearable if a newcomer looks at the existing code and imitates it.
+I'm thinking that if you leave one line of shit code, it will be 100 lines of it.
+This book is a collection of tears and sighs that I shed at that time.
+Fortunately, the sequel to this book will not be written because the team has been stable enough to destroy the fucking code before it is born in education and review.
 
-=== @<b>{C++は難しいのか？}
+=== @ <b> {Is C ++ difficult? }
 
-C++は難しいです、でもほとんどの場合は必要な難しさだと思っています。
+C ++ is difficult, but in most cases I find it necessary.
 
-C++はものすごく高機能です。
-簡単なことを簡単にコーディングするには向いていないかもしれません。
-しかし、ライブラリを書いている僕からすると天国のような言語です。
-優れた実行時性能と柔軟なインターフェイスを備えたライブラリを書きたいとき、いつもC++は最高の言語でした。
-なんだかんだPythonも使いますが、実行時性能が足りなければC++で書き直せばいいのだという謎の安心感がありました（もちろんPythonのライブラリも優秀ですが）。
+C ++ is extremely sophisticated.
+It may not be suitable for easy coding of simple things.
+But from the perspective of me writing the library, it's a heavenly language.
+Whenever I wanted to write a library with great run-time performance and a flexible interface, C ++ was the best language.
+I use Python for some reason, but there was a mysterious reassurance that I could rewrite it in C ++ if the runtime performance was not sufficient (although the Python library is excellent, of course).
 
-実行時性能が優れていなくてもよく、専用のインターフェイスがあればよく、またC++の過去の遺産もない場合、
-C++は無駄に複雑で難しく見えるのかもしれません。
+If you don't need good run-time performance, have a dedicated interface, and don't have a legacy of C ++,
+C ++ may seem wastefully complex and difficult.
 
-簡単に書ける言語はほとんどの場合、何かを切り捨てることで簡単になっているのです。
-そういう意味では、C++は難しいです。
-様々な機能がユーザーに開放されています。
-それらを真に必要としたとき、C++はあなたの助けとなってくれるでしょう。
-逆にそれらを真に必要としない場合、C++を開発言語に選択するのは間違っているかもしれません。
-そういう人はとなりのPython部屋に行くべきなのです。
+Most easy-to-write languages ​​are made simple by truncating something.
+In that sense, C ++ is difficult.
+Various functions are open to users.
+C ++ can help you when you really need them.
+Conversely, choosing C ++ as your development language may be wrong if you don't really need them.
+Those people should go to the next Python room.
 
-@<b>{C++の規格の難解さにブチ切れることもありますけどね！}
+@ <b> {C ++ standards can be difficult to understand, though! }

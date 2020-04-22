@@ -1,83 +1,83 @@
-= ｱｯ!この分岐「深い」ッ！！
+= Ah! This branch is "deep"! !!
 
-読者も分岐が異常に複雑でネストが深いコードを目撃したことがあるのではないでしょうか？
-コントロールフローの複雑なコードはダメなコードの典型例と言っても過言ではないでしょう。
+Perhaps you've seen code with unusually complex branching and deep nesting?
+It is no exaggeration to say that complicated control flow code is a typical example of bad code.
 
-複雑な処理を行わなければいけない場合、コードが複雑になるのは仕方がないでしょう。
-しかし、あまりにも多くの場合分けを一つの関数に押し込めるのは間違いだと思います。
+If you have to do complicated things, your code will be complicated.
+But I think it's a mistake to put too many cases into one function.
 
-この章では、複雑な分岐をいかに簡潔にコーディングし、関数をどう分離するのかについて議論します。
+This chapter discusses how to code complex branches concisely and how to separate functions.
 
-== 分岐乱舞
+== Branch Ranbu
 
- * 非負整数の負数チェック
- * すでにNull検査が済んでいるポインタのダブルチェック
+ * Negative number check for non-negative integers
+ * Double check for pointers that have already been Null checked
 
-など、一生通ることのない分岐を見ます。
+For example, see a branch that never goes through.
 
-//emlist[非負整数の負数チェック][cpp]{
-// sizeofはstd::size_tを返すので絶対に真になることはない
-if constexpr (sizeof(foo) < 0) {
+// emlist [Negative check for non-negative integers] [cpp] {
+// sizeof returns std :: size_t so it can never be true
+if constexpr (sizeof (foo) <0) {
   // ...
 }
 //}
 
-//emlist[すでにNull検査が済んでいるポインタのダブルチェック][cpp]{
-int* ptr;
-assert(ptr); // 一回目のチェック
-if (ptr) { // assertするかハンドルするかどっちかにしろ
+// emlist [Double check for pointers that have already been Null checked] [cpp] {
+int * ptr;
+assert (ptr); // first check
+if (ptr) {/ Either assert or handle
   // ...
 } else {
   // ...
 }
 //}
 
-非負整数の負数チェックの場合は修正が簡単で、単に取り除けばいいです。
+In case of non-negative integer negative check, it is easy to fix and just remove it.
 
-ポインタのダブルチェックの場合、assertするのが正しいのかハンドリングするのが正しいのかわからないです。
-そのため、git blameを行い書いた人を問い詰めるか、自分でコードを読んで考えるしかないです。
+I'm not sure if the pointer double check is right to assert or right to handle.
+Therefore, there is no choice but to ask the person who wrote git blame and read it, or to think by reading the code yourself.
 
-== 正常系と異常系
+== Normal system and abnormal system
 
-正常系と異常系が分けて書かれていないというのはコードのわかりにくさの原因のひとつになります。
-先に異常系のチェックを行い異常値を返し、以降は正常系の処理を行うというのはよく知られた方法です。
+The fact that the normal system and the abnormal system are not written separately is one of the reasons why the code is difficult to understand.
+It is a well-known method that the abnormal system is checked first, the abnormal value is returned, and then the normal system is processed.
 
-新人が最初に書いた最初のプルリクエストでswitchとifを駆使したコードを見せてくれました。
-残念ながら、紙面を圧迫するほど複雑なので疑似コードの掲載を断念せざるを得ないです。
+In the first pull request that the newcomer first wrote, he showed me the code using switch and if.
+Unfortunately, it's so complicated that it takes up space, so I have to give up posting pseudo code.
 
-この問題へのより良い解答は、モナドを導入することだと思われます。
-以下はRustのコードです。
-コマンドの入力をパースして数字であれば2倍にして返す関数を書いてみます。
+A better answer to this question seems to be the introduction of monads.
+Below is the Rust code.
+I will write a function that parses the command input and doubles it if it is a number.
 
-//emlist[Resultのモナド機能を駆使して書いたコマンドラインのパース][rust]{
-fn twice_arg(mut argv: env::Args) -> Result<i32, CliError> {
-    argv.nth(1)
-        .ok_or(CliError::NotEnoughArgs)?
-        .parse::<i32>()
-        .map(|x| x * 2)
+// emlist [Command line parse written using the monad function of Result] [rust] {
+fn twice_arg (mut argv: env :: Args)-> Result <i32, CliError> {
+    argv.nth (1)
+        .ok_or (CliError :: NotEnoughArgs)?
+        .parse :: <i32> ()
+        .map (| x | x * 2)
 }
 //}
 
-このメソッドチェインはエラー処理を書いていないです！
-Rustの詳細な解説は省きますが、モナディック関数を使うとエラー処理をわざわざ全部書かなくて済みます。
-エラーを合成するのです！
+This method chain does not write error handling!
+I won't go into a detailed explanation of Rust, but if you use monadic functions, you don't have to bother writing error handling.
+Synthesize the error!
 
-@<code>{ok_or}や@<code>{map}などの関数はコンビネータと呼ばれます。
-@<code>{nth}や@<code>{parse}が@<code>{Option}や@<code>{Result}を返しており、
-コンビネータがエラーを合成しているのです。
+Functions such as @ <code> {ok_or} and @ <code> {map} are called combinators.
+@ <code> {nth} or @ <code> {parse} is returning @ <code> {Option} or @ <code> {Result},
+The combinator is composing the error.
 
-残念なお知らせがあります。
-C++にこのような高級な機能やライブラリは備わっていないのです。
-しかし、ないのであれば、モナドライブラリを作ればよいのです。
+I have a disappointing news.
+C ++ doesn't have such advanced features and libraries.
+But if you don't, you can create a monad library.
 
-テンプレートライブラリを書く時間がない？
-しかし、コンビネータは「失敗する可能性がある単位」で関数を分離するという重要な示唆を与えてくれます。
-すくなくとも、エラーが起こる単位で関数に切り出すことを心がけたいところです。
+Don't have time to write a template library?
+However, combinators give us an important suggestion of separating functions in "units that can fail".
+At the very least, I want to keep in mind that the function should be cut out in units where an error occurs.
 
-== この章のまとめ
+== Summary of this chapter
 
-モナドがない言語が何をやってもダメ。
-モナディック関数を作れ。
+No language does not have a monad.
+Make a monadic function.
 
-何種類ものエラーが起こるような関数を書かない。
-エラーが起こる最小単位くらいで関数を切り分ける。
+Do not write a function that causes many kinds of errors.
+Divide the function by the minimum unit where an error occurs.

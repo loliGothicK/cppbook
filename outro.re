@@ -1,34 +1,34 @@
-= あとがき
+= Postscript
 
-本書を最後まで読んでくださった皆さん、ありがてえええええええええええええええ。
-本書が皆さんのコードをより良くできると幸いです。
+Thank you to everyone who has read this book to the end.
+We hope this book will improve your code.
 
-あとがきを書くスペースをなんとかかんとか確保することができた、奇跡である。
-せっかく作った1ページでこんなしょうもないことを書いていて良いのだろうか。
+It is a miracle that I managed to secure a space for writing postcards.
+Is it okay if I write something unhelpful on one page I made?
 
-Rustがいいぞとは言いましたけど、RustをやるとC++の素晴らしさに気がつくんですよね。
-特に可変長テンプレートですね、Rustだとマクロにならざるをえないのがもにょるですよ。
-Boostみたいに最強のライブラリもないですしね…。
-Boostほんとになんでもあってすごいですよね…。
+I said that Rust is good, but when you do Rust, you will notice the wonderfulness of C ++.
+In particular, it is a variable length template, and Rust has to be a macro.
+There is no strongest library like Boost ...
+Boost is really amazing, isn't it?
 
-本書を書く過程でお世話になった人は割と少ない。
-少ない中でももっとも感謝したいのは可愛いケモミミを書いてくれた俺九番先生です。
-間違えました、表紙をデザインしてくれた俺九番先生です。
-いや、表紙可愛すぎるでしょ。
+Very few people have helped me in the process of writing this book.
+The most grateful of all is Mr. Kyuban who wrote cute cheeks.
+I made a mistake, I am Mr. Kyuban who designed the cover.
+No, the cover is too cute.
 
-あと、間違いを指摘してくれた某AgatePrisさんと某hsjoihsさんには感謝しております。
+Also, I am grateful to certain Agate Pris and certain hsjoihs who pointed out the mistake.
 
-技術書典6に応募して落選したんですけど、このときはC++の魔術書を書こうと思ってたんですよね。
-でも、落選の腹いせに型の魔術を駆使してライブラリを書いていて、魔術ってみんなが使ったらアカンなとね、思ったんですよ。
+I applied for Technical Book 6 and lost, but at this time I was thinking of writing a C ++ magic book.
+However, I was writing a library by making full use of type magic to get sick of losing, and I thought that it would be awkward if everyone used magic.
 
-反響が良くても悪くても、在庫の山でも、また書くと思います。
-その時にはまた手にとっていただけると光栄です。
+I think I will write it again, whether it is good or bad, or a pile of stock.
+At that time, it would be an honor if you could pick it up again.
 
-最後に、執筆時間を無限に奪ったあのソートなぞなぞという謎の遊戯について…
+Lastly, about the mysterious game called that sort riddle that took infinite writing time ...
 
-ソートなぞなぞというソート済みの単語を復元して元の単語を当てるという早打ち競技。
-Discordのサーバーで動いておりますが、ぼくはこの遊戯に魂を売りました。
-ソートなぞなぞを落とさないために自分のECSでソートなぞなぞをホストしましたし、
-ソートなぞなぞで経験ゼロのフランス語の単語を覚えつつあります。
-ソートなぞなぞをRustでフルスクラッチしており、執筆が終わった段階で本格的に時間を投入する予定です。
-次に出す本のタイトルが『ソートなぞなぞを支える技術』になっているかもしれないです（それくらい本気でやってます）。
+A quick-hit competition in which the sorted words called sorted riddles are restored and the original words are applied.
+It runs on Discord's server, but I sold my soul to this game.
+I hosted a sort riddle on my ECS to avoid dropping the sort riddle,
+I am learning French words with no experience in sort riddles.
+I'm fully scratching the sort riddle with Rust, and I plan to devote time to it when I'm done writing.
+The title of the next book may be "Technology that supports sort riddles" (I'm serious about that).
