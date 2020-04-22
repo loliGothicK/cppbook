@@ -1,85 +1,85 @@
-= 無駄なコードを減らす
+= Reduce wasted code
 
-コードは書けば書くほどバグが混入します。
-無駄なコードの重複や複雑性を回避し、シンプルで美しいコードを維持することが設計の成功の鍵です。
+The more code you write, the more bugs you introduce.
+Avoiding unnecessary code duplication and complexity, and keeping your code simple and beautiful is the key to successful design.
 
-== コピペ乱舞
+== Copy and Dance
 
-無駄なコードを減らすための最初の方針は共通の処理を関数として共通化することです。
-悲しいかな、コピペによって増殖してしまったコードはたくさんあります。
-そのようなコードは一部を変更すると他の変更が漏れ、容易にバグの原因となります。
+The first strategy to reduce wasted code is to standardize common operations as functions.
+Alas, there is a lot of code that was copied and copied by Copy and Paste.
+If you change a part of such code, other changes are leaked out, and it is easy to cause a bug.
 
-そもそも、自分でコードを書かずに信頼できるライブラリを使うのが最適です。
-この章では、C++の標準ライブラリのカスタマイゼーションポイントの活用方法を紹介します。
+In the first place, it's best to use a trusted library without writing your own code.
+This chapter introduces how to use the customization points of the C ++ standard library.
 
-== カスタマイゼーションポイント
+== Customization points
 
-多くの言語では文字列化やオブジェクトの比較など、よくある操作をカスタマイズする方法は確立されています。
-カスタマイズを覚えておくことで共通の資源でコードを書くことが可能になります。
+Many languages ​​have established methods for customizing common operations such as stringification and object comparison.
+Remembering the customization allows you to write code with common resources.
 
 === Stringifying
 
-C++20から入る文字列フォーマットを待ちましょう（本音）。
+Let's wait for the string format entered from C ++ 20 (the real intention).
 
-実際問題、C++17までは以下のように@<code>{std::ostream}に出力する@<code>{operator<<}をカスタマイゼーションポイントに使うことが多いです。
-@<code>{std::stringstream}に出力して@<code>{str()}で文字列を取り出します。
+Actually, until C ++ 17, @ <code> {operator <<} which outputs to << code> {std :: ostream} as below is often used as a customization point.
+Output to @ <code> {std :: stringstream} and extract the string with @ <code> {str ()}.
 
-//emlist[][cpp]{
+// emlist [] [cpp] {
 class Widget {
     int a, b;
 public:
-    friend std::ostream&
-    operator<<(std::ostream& os, const Widget& w) const {
-        return os << a << " " << b;
+    friend std :: ostream &
+    operator << (std :: ostream & os, const Widget & w) const {
+        return os << a << "" << b;
     }
 };
 //}
 
-=== 比較
+=== Comparison
 
-C++20から入る三方比較演算子 @<code>{operator<=>}を待ちましょう（本音）。C++17では、比較演算CPOは何種類かあります。
+Wait for the three-way comparison operator @ <code> {operator <=>} that comes in from C ++ 20 (the real intention). In C ++ 17, there are several types of comparison operation CPO.
 
-@<b>{方法1: 演算子のオーバーロード}
+@ <b> {Method 1: Operator overloading}
 
-@<code>{==, !=, <, >, <=, >=}の6種類の演算子を適切にオーバーロードしましょう。
+Properly overload the six operators @ <code> {==,! =, <,>, <=,> =}.
 
-@<b>{方法２: CPO（カスタマイゼーションポイントオブジェクト）}
+@ <b> {Method 2: CPO (Customization Point Object)}
 
-@<code>{std::map}や@<code>{std::set}は、第3テンプレート引数がカスタマイゼーションポイントオブジェクトになっています。
-std::lessを特殊化するか、自分で作ったクラスを渡してあげることで@<code>{std::map}のキー比較をカスタマイズできます。
+In @ <code> {std :: map} and @ <code> {std :: set}, the third template argument is the customization point object.
+You can customize the key comparison of @ <code> {std :: map} by specializing std :: less or passing your own class.
 
-//emlist[std::mapのを降順にカスタマイズ][cpp]{
+// customize emlist [std :: map in descending order] [cpp] {
 #include <map>
 #include <functional>
 
-int main() {
-    std::map<std::string, int, std::greater<>> dict{};
+int main () {
+    std :: map <std :: string, int, std :: greater <>> dict {};
 }
 //}
 
-このように、カスタマイゼーションポイントをクラスから分離しています。
-何も書かなければデフォルト実装が選択されます。
-ユーザーが明示的にクラスを指定することで実装の詳細をユーザーが静的にインジェクションすることができるのです。
-このカスタマイゼーションポイントの設計はポリシーと呼ばれています（次章で解説します）。
+This way we separate the customization points from the classes.
+If nothing is written, the default implementation will be selected.
+Users can statically inject implementation details by explicitly specifying the class.
+The design of this customization point is called a policy (discussed in the next chapter).
 
-比較を伴う関数は比較のための関数オブジェクトを受け取るようになっています。
-std::sort,std::min,std::maxの第3引数などがそれです。何も指定しなければ演算子が使われます。
-関数ではよくあるカスタマイゼーションポイントのもたせ方です。
+Functions with comparisons are supposed to receive a function object for comparison.
+That is the third argument of std :: sort, std :: min, std :: max. If nothing is specified, the operator will be used.
+This is a way to keep the customization points that are often used in functions.
 
-//emlist[std::sortのカスタマイズ][cpp]{
+// emlist [std :: sort customization] [cpp] {
 #include <algorithm>
 #include <vector>
 
-int main() {
-    std::vector<std::pair<int, int>> vec{ {1 ,2}, {2, 3}, {3, 4} };
-    std::sort(vec.begin(), vec.end(), [](auto&& p1, auto&& p2){
-        return p1.second < p2.second;
+int main () {
+    std :: vector <std :: pair <int, int >> vec {{1, 2}, {2, 3}, {3, 4}};
+    std :: sort (vec.begin (), vec.end (), [] (auto && p1, auto && p2) {
+        return p1.second <p2.second;
     });
 }
 //}
 
-== この章のまとめ
+== Summary of this chapter
 
- * コードをしっかり共通化する
- * そもそも自分でコードを書かずにライブラリを探す
- * 標準ライブラリのカスタマイゼーションポイントを利用する
+ * Make the code common
+ * Search for a library without writing the code yourself
+ * Take advantage of standard library customization points
