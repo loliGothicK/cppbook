@@ -1,285 +1,285 @@
-= 脱初心者に襲いかかるC++の罠
+= C ++ trap that attacks a beginner
 
-やっとC++初心者を脱出し、もっと良いコードを目指すあなた。
-そんなあなたに襲いかかるのはC++の難解な仕様の数々です。
+You finally escape the C ++ beginner and aim for better code.
+It is the difficult specifications of C ++ that will strike you.
 
-この章では、ちょっと高級な機能に手を出し始めた脱初心者が陥る罠の数々を解説します。
+In this chapter, we will explain a number of traps that beginners who fall into the hands of advanced features will fall into.
 
 == Forwarding Reference
 
-@<b>{Forwarding Reference}とは右辺値と左辺値のオーバーロードが同時に扱えるという夢のような挙動を実現する機能です。
-その特性から、Forwarding Referenceを使ったオーバーロードはあらゆる修飾に対応するのでオーバーロードに選択されやすいという事実があります。
+@ <b> {Forwarding Reference} is a function that realizes a dream-like behavior that overloads of rvalue and lvalue can be handled at the same time.
+Due to its characteristics, there is a fact that overloads using Forwarding Reference are suitable for overloads because they support all modifications.
 
-Forwarding Referenceで引数をとる関数は意図しない呼び出しを避けるため、SFINAEで型制約をかけるべきです。
-しかし、SFINAEは難しいです。
-難しいので、脱初心者段階ではForwarding Referenceに型制約を書くことができないのです。
+Functions that take arguments in a Forwarding Reference should be type-constrained in SFINAE to avoid unintended calls.
+But SFINAE is difficult.
+Because it is difficult, it is not possible to write a type constraint in Forwarding Reference at the stage of post-beginner.
 
-そうして次のようなコードが生まれます。
+Then the following code is born.
 
-//emlist[][cpp]{
-template<typename T>
-void f(const std::vector<T>&) { std::cout << "vector<T>"; }
+// emlist [] [cpp] {
+template <typename T>
+void f (const std :: vector <T> &) {std :: cout << "vector <T>";}
 
-template<typename T>
-void f(T&&) { std::cout << "T&&"; }
+template <typename T>
+void f (T &&) {std :: cout << "T &&";}
 //}
 
-この上の関数@<code>{f(const std::vector<T>&)}は引数が@<code>{const std::vector<T>}の左辺値だった場合のみに呼ばれます。
-それ以外の場合はすべて下の関数@<code>{f(T&&)}が呼ばれます。
+The above function @ <code> {f (const std :: vector <T> &)} is called only if the argument is an lvalue of @ <code> {const std :: vector <T>} .
+In all other cases, the below function @ <code> {f (T &&)} is called.
 
-オーバーロードをする場合は型制約をつけなければ、だいたいはADLで選ばれるので邪魔になります。
-ジェネリックな関数を書いてはいけません、型制約を絶対につけなければいけません。
-C++14までならば、つぎのようにenable_ifのSFINAE技法を用います。
+When overloading, if you do not add type constraints, it will be selected by ADL and it will be an obstacle.
+Don't write generic functions, you must put type constraints on them.
+Up to C ++ 14, use the enable_if SFINAE technique as follows.
 
-//emlist[][cpp]{
-
-template <class T>
-struct is_vec: std::false_type {};
+// emlist [] [cpp] {
 
 template <class T>
-struct is_vec<std::vector<T>>: std::true_type {};
+struct is_vec: std :: false_type {};
+
+template <class T>
+struct is_vec <std :: vector <T >>: std :: true_type {};
 
 // for vector
-template<typename T>
-f(const std::vector<T>&) { std::cout << "vector<T>"; }
+template <typename T>
+f (const std :: vector <T> &) {std :: cout << "vector <T>";}
 
 // default
-template<typename T>
-std::enable_if_t<!std::is_same_v<is_vecstd::decay_t<T>>::value>
-f(T&&) { std::cout << "T&&"; }
+template <typename T>
+std :: enable_if_t <! std :: is_same_v <is_vecstd :: decay_t <T >> :: value>
+f (T &&) {std :: cout << "T &&";}
 //}
 
 
-C++17を使っていて、オーバーロードをしないのであれば、以下のように@<code>{constexpr if}を使えばよいです。
+If you are using C ++ 17 and don't want to overload, you can use @ <code> {constexpr if} like this:
 
-//emlist[][cpp]{
-template<typename T>
-void f(T&&) {
-  if constexpr (is_vec<std::decay_t<T>>::value) {
-    std::cout << "vector<T>";
+// emlist [] [cpp] {
+template <typename T>
+void f (T &&) {
+  if constexpr (is_vec <std :: decay_t <T >> :: value) {
+    std :: cout << "vector <T>";
   }
   else {
-    std::cout << "other";
+    std :: cout << "other";
   }
 }
 //}
 
-== 構造化束縛
+== Structured binding
 
-構造化束縛はC++17で追加された機能です。
-ペアやタプル、配列や構造体を分解して各要素を取り出す機能で、非常に便利です。
+Structured binding is a feature added in C ++ 17.
+It is very convenient because it can decompose pairs, tuples, arrays, and structures to retrieve each element.
 
-@<code>{auto [a, b] = x}のように書いたとき、@<code>{a,b}がどのような型になるのか？
-これについていったい何人に説明したか、数え切れません。
+What type does @ <code> {a, b} have when written as @ <code> {auto [a, b] = x}?
+I can't count how many people explained this.
 
-まず、大切なことを言っておきます。
-新しい機能を使う前に、@<code>{cppreference.com}で一度調べてください。
-雰囲気で使わないでください、おねがいします。
+First, let me tell you something important.
+Check out @ <code> {cppreference.com} once before using the new features.
+Please do not use it in an atmosphere, please.
 
-この機能は宣言に相当する文法です、すでに宣言された変数に代入はできません。
-また、型宣言は@<code>{auto}にcvr修飾がついたものしか書くことができないです。
-また、@<code>{_}のようなものを書くと値が無視されるというような便利な機能もありません（代入ができないので、もちろん@<code>{std::ignore}も使えません）。
-構造化束縛は入れ子にできません。
+This function has a syntax equivalent to a declaration, you cannot assign to a variable that has already been declared.
+Also, the type declaration can only write @ <code> {auto} with cvr modification.
+Also, there is no convenient function that the value is ignored when you write something like @ <code> {_}. (Of course, @ <code> {std :: ignore} cannot be used because assignment is not possible. ).
+Structured bindings cannot be nested.
 
-@<code>{auto const& [a, b] = x}のように書いたから@<code>{a,b}がconstになる、、、
+Since it was written as @ <code> {auto const & [a, b] = x}, @ <code> {a, b} becomes const ...
 
-@<b>{とはかぎりません！}
+Not necessarily @ <b> {! }
 
-構造化束縛の型宣言@<code>{auto const&}は分解対象@<code>{x}を受け取るときの仮引数宣言だと思ってください。
+Think of the type declaration of structured binding @ <code> {auto const &} as a parameter declaration when receiving the target of decomposition @ <code> {x}.
 
-@<code>{x}が配列の場合順番に添字アクセスが繰り返されるだけです。
-@<code>{std::tuple_size<T>::value}が妥当な式でないクラスの場合はメンバアクセスになります。
+When @ <code> {x} is an array, subscript access is only repeated in order.
+If @ <code> {std :: tuple_size <T> :: value} is a class that is not a valid expression, it will be member access.
 
-この2つの場合は@<code>{a,b}の型は@<code>{auto const& [a, b] = x}のように書いたから@<code>{a,b}がconstになるというのは真実です。
+In these two cases, the type of @ <code> {a, b} is written as @ <code> {auto const & [a, b] = x}, so @ <code> {a, b} becomes const Is true.
 
-タプルライク型の場合は参照型を持てるため話が変わります。
-@<code>{std::tuple_size<T>::value}が妥当な式であるクラスの場合は@<code>{get<i>(x)}の呼び出しによって行われます。
-よってタプルライク型の場合、i番目の構造化束縛の変数の型は@<code>{std::tuple_element<i, E>::type}になります。
+In the case of tuple-like type, the story is different because you can have a reference type.
+This is done by calling @ <code> {get <i> (x)} for classes where @ <code> {std :: tuple_size <T> :: value} is a valid expression.
+Therefore, in case of tuple-like type, the variable type of i-th structured binding is @ <code> {std :: tuple_element <i, E> :: type}.
 
-//emlist[][cpp]{
-float x{};
-char  y{};
-int   z{};
+// emlist [] [cpp] {
+float x {};
+char y {};
+int z {};
  
-std::tuple<float&,char&&,int> tpl(x,std::move(y),z);
+std :: tuple <float &, char &&, int> tpl (x, std :: move (y), z);
 
-const auto& [a,b,c] = tpl;
+const auto & [a, b, c] = tpl;
 
-// a that refers to x; decltype(a) is float&
-// b that refers to y; decltype(b) is char&&
-// c that refers to the 3rd element of tpl; decltype(c) is const int
+// a that refers to x; decltype (a) is float &
+// b that refers to y; decltype (b) is char &&
+// c that refers to the 3rd element of tpl; decltype (c) is const int
 //}
 
-要素が参照型の場合、tupleの要素型がそのまま手に入ることになります。
+If the element is a reference type, the element type of tuple is available as is.
 
-== Two Phase Lookup (二段階名前検索)
+== Two Phase Lookup
 
-C++には二段階名前検索という機能があります。
-これは名前の検索が二段階で行われることによって直感的な名前の解決がなされます。
+C ++ has a feature called two-stage name search.
+Intuitive name resolution is achieved through a two-step name lookup.
 
-=== 二段階名前検索とその必要性
+=== Two-stage name search and its necessity
 
-二段階名前検索は次のような状況で必要となります。
+The two-step name search is necessary in the following situations.
 
-//emlist[][cpp]{
+// emlist [] [cpp] {
 #include <cstdio>
 
-void func(void*) { std::puts("The call resolves to void*") ;}
+void func (void *) {std :: puts ("The call resolves to void *");}
 
-template<typename T> void g(T x) {
-    func(0);
+template <typename T> void g (T x) {
+    func (0);
 }
 
-void func(int) { std::puts("The call resolves to int"); }
+void func (int) {std :: puts ("The call resolves to int");}
 
-int main() {
-    g(3.14);
+int main () {
+    g (3.14);
 }
 //}
 
-この@<code>{g(3.14)}、テンプレート定義の時点で、テンプレートを書いた人は既に知られている@<code>{func(void*)}を期待しているでしょう。
-ここで、新たに参加したプログラマが@<code>{func(int)}を追加してしまったとしましょう。
-二段階名前検索がない場合は@<code>{g(3.14)}の時点から見えているすべての関数が検索され、@<code>{func(int)}に解決してしまいます。
-一回目の検索によって@<code>{g(T)}から見えている名前が検索され、さらに二回目の検索によって実体化が行われます。
+This @ <code> {g (3.14)}, at the time of template definition, the person who wrote the template would expect the already known @ <code> {func (void *)}.
+Now, let's assume a new programmer added @ <code> {func (int)}.
+If there is no two-step name search, all functions visible from the point of @ <code> {g (3.14)} will be searched and resolved to @ <code> {func (int)}.
+The first search will search for the name visible from @ <code> {g (T)}, and the second search will materialize it.
 
-この仕組みを@<b>{Two Phase Lookup (二段階名前検索)}といいます。
+This mechanism is called @ <b> {Two Phase Lookup}.
 
-=== 実体化の遅延の悪用
+=== Exploitation of materialization delay
 
-閉区間を表す@<code>{interval<T>}型を考えます。
-この型に足し算を実装します。
+Consider an @ <code> {interval <T>} type that represents a closed interval.
+Implements addition on this type.
 
-//emlist[][cpp]{
-template <class T> struct interval { T low, up; };
+// emlist [] [cpp] {
+template <class T> struct interval {T low, up;};
 
 template <class T>
-interval<T> operator+(interval<T> lhs, interval<T> rhs)
-    { return { lhs.low + rhs.low, lhs.up + rhs.up }; }
+interval <T> operator + (interval <T> lhs, interval <T> rhs)
+    {return {lhs.low + rhs.low, lhs.up + rhs.up};}
 //}
 
-数値@<m>{x}は一点区間@<m>{[x, x]}と考えることができます。
-したがって、@<code>{interval<T> + T}や@<code>{T + interval<T>}も作りたいと思うでしょう。
+The number @ <m> {x} can be thought of as a one-point interval @ <m> {[x, x]}.
+Therefore, you'll also want to create @ <code> {interval <T> + T} and @ <code> {T + interval <T>}.
 
-//emlist[][cpp]{
+// emlist [] [cpp] {
 template <class T>
-interval<T> operator+(T lhs, interval<T> rhs)
-    { return { lhs + rhs, lhs.up + rhs.up }; }
+interval <T> operator + (T lhs, interval <T> rhs)
+    {return {lhs + rhs, lhs.up + rhs.up};}
 template <class T>
-interval<T> operator+(interval<T> lhs, T rhs)
-    { return { lhs.low + rhs, lhs.up + rhs }; }
+interval <T> operator + (interval <T> lhs, T rhs)
+    {return {lhs.low + rhs, lhs.up + rhs};}
 //}
 
-ここで、一旦深呼吸をしましょう。
-C++では組み込みの演算で@<code>{1 + 1.0}は許可されています。
+Let's take a deep breath here.
+@ <Code> {1 + 1.0} is allowed in C ++ as a built-in operation.
 
-この挙動を少し拡張して、@<code>{interval<T> + U}や@<code>{U + interval<T>}を
-@<code>{interval<T>}（結果の型はinterval型に合わせる）ようにしたいと思います。
+We extend this behavior a bit to include @ <code> {interval <T> + U} and @ <code> {U + interval <T>}
+I want to do something like @ <code> {interval <T>} (the result type matches the interval type).
 
-二段階名前検索を悪用すればややこしいメタプログラミングは必要ではありません。
-とはいえ、多少の準備が必要です。
+There is no need for complicated metaprogramming if you exploit the two-step name lookup.
+However, some preparation is required.
 
-まず、以下のように@<code>{interval}に依存型名を追加します:
+First, add the dependent type name to @ <code> {interval} as follows:
 
-//emlist[][cpp]{
+// emlist [] [cpp] {
 template <class T> struct interval {
     using value_type = T;
     T low, up;
 };
 //}
 
-@<code>{interval<T>::value_type}のようなものを@<b>{依存名(依存型名)}といいます。
-@<code>{T}がテンプレートの場合、@<code>{value_type}は@<code>{interval<T>}に依存していて、@<code>{interval<T>}が決定すると導出されます。
-ただし、@<code>{interval<double>::value_type}は依存名ではありません、@<code>{interval<double>}から即座に@<code>{value_type}が@<code>{double}とわかるためです。
+Something like @ <code> {interval <T> :: value_type} is called @ <b> {dependent name (dependent type name)}.
+If @ <code> {T} is a template, @ <code> {value_type} is dependent on @ <code> {interval <T>} and derived when @ <code> {interval <T>} determines Will be done.
+However, @ <code> {interval <double> :: value_type} is not a dependent name, @ <code> {interval <double>} immediately changes @ <code> {value_type} to @ <code> {double} To understand.
 
-//emlist[][cpp]{
+// emlist [] [cpp] {
 template <class T> struct interval {
     using value_type = T;
     T low, up;
 };
 //}
 
-続いて、足し算を修正します。
+Then correct the addition.
 
-//emlist[][cpp]{
+// emlist [] [cpp] {
 template <class T>
-interval<T> operator+(interval<T> lhs, interval<T> rhs)
-    { return { lhs.low + rhs.low, lhs.up + rhs.up }; }
+interval <T> operator + (interval <T> lhs, interval <T> rhs)
+    {return {lhs.low + rhs.low, lhs.up + rhs.up};}
 
 template <class T>
-interval<T> operator+(typename interval<T>::value_type lhs, interval<T> rhs)
-    { return { lhs + rhs, lhs.up + rhs.up }; }
+interval <T> operator + (typename interval <T> :: value_type lhs, interval <T> rhs)
+    {return {lhs + rhs, lhs.up + rhs.up};}
 template <class T>
-interval<T> operator+(interval<T> lhs, typename interval<T>::value_type rhs)
-    { return { lhs.low + rhs, lhs.up + rhs }; }
+interval <T> operator + (interval <T> lhs, typename interval <T> :: value_type rhs)
+    {return {lhs.low + rhs, lhs.up + rhs};}
 //}
 
-これは@<code>{typename interval<T>::value_type}が依存名であり、関数テンプレートの実引数からの型推論の対象ではないことを利用しています。
-次のコードを考えます:
+This is because @ <code> {typename interval <T> :: value_type} is a dependent name and is not the target of type inference from actual argument of function template.
+Consider the following code:
 
-//emlist[][cpp]{
-  interval<int> itv{1, 2};
+// emlist [] [cpp] {
+  interval <int> itv {1, 2};
   auto res = itv + 1.0;
 //}
 
-まず、@<code>{operator+(interval<T> lhs, typename interval<T>::value_type rhs)}が検索されます。
-左オペランドから@<code>{interval<T>}は@<code>{interval<int>}と推論されます。
-続いて、二段階名前検索によって依存名が解決され、@<code>{typename interval<T>::value_type}が@<code>{int}と導出されます。
+First, @ <code> {operator + (interval <T> lhs, typename interval <T> :: value_type rhs)} is searched.
+From the left operand, @ <code> {interval <T>} is inferred as @ <code> {interval <int>}.
+Then, the two-step name lookup resolves the dependent name and derives @ <code> {typename interval <T> :: value_type} as @ <code> {int}.
 
-最終的に、@<code>{1.0 (double)}は@<code>{int}に変換可能ですので、オーバーロード解決に成功します！
+Finally, @ <code> {1.0 (double)} can be converted to @ <code> {int}, so overload resolution will succeed!
 
-言語機能の悪用ってすごく楽しいですよね！
+Abuse of language features is a lot of fun!
 
 === constexpr if
 
-別に難しい機能じゃないが、二段階名前検索でハマる人が続出しているので解説することにしました（cpprefjp読めでもいいのですが…）。
+It's not a difficult function, but I decided to explain it because there are a lot of people who are addicted to the two-step name search (cpprefjp can be read though ...).
 
-問題のコードはつぎのようなものです:
+The code in question looks like this:
 
-//emlist[][cpp]{
+// emlist [] [cpp] {
 template <class T>
-void func() {
-  if constexpr (!std::integral_v<T>) {
-    // Tが整数型じゃないときのみ評価されてほしい
-    // 実際は常に評価される
-    static_assert(false);
+void func () {
+  if constexpr (! std :: integral_v <T>) {
+    // Only evaluate if T is not an integer
+    // actually always evaluated
+    static_assert (false);
   }
 }
 //}
 
-constexpr ifは実行されないテンプレートの実体化を防ぐ (依存名の検証をしない) だけで、非依存名は検証されるのです。
-この例のstatic_assertに渡す条件式はテンプレートパラメータに依存していないので、テンプレートの宣言時に検証されてエラーになります。
+The constexpr if only prevents non-executable template materialization (does not perform dependency name validation), independent names are validated.
+Since the conditional expression passed to static_assert in this example does not depend on the template parameter, it will be validated and an error will occur when the template is declared.
 
-解決方法は簡単でstatic_assertに渡す条件式が依存名ならばテンプレートの宣言時に検証されず、テンプレート実体化まで評価を遅らせることができます。
+The solution is simple, and if the conditional expression passed to static_assert is a dependent name, it will not be validated when declaring the template, and evaluation can be delayed until the materialization of the template.
 
-//emlist[][cpp]{
-template <class...> inline constexpr bool always_false_v = false;
+// emlist [] [cpp] {
+template <class ...> inline constexpr bool always_false_v = false;
 
 template <class T>
-void func() {
-  if constexpr (std::integral_v<T>) {
+void func () {
+  if constexpr (std :: integral_v <T>) {
     // ...
   }
   else {
-    static_assert(always_false_v<T>);
+    static_assert (always_false_v <T>);
   }
 }
 //}
 
-@<code>{always_false_v<T>}は@<code>{T}に依存する式なので、依存名です。
+@ <code> {always_false_v <T>} is a dependent name because it is an expression that depends on @ <code> {T}.
 
-また、つぎのようにラムダ式を使うことで評価を遅らせるという作戦も考えられます（ラムダ式のコンパイル時評価が許可されたC++17から可能）。
+It is also possible to use an operation that delays evaluation by using a lambda expression as follows (this is possible from C ++ 17 in which compile-time evaluation of lambda expressions is allowed).
 
-//emlist[][cpp]{
+// emlist [] [cpp] {
 template <typename T>
-void f(T) {
-  if constexpr (std::is_same_v<T, int>) {
-    static_assert([]{ return false; }());
+void f (T) {
+  if constexpr (std :: is_same_v <T, int>) {
+    static_assert ([] {return false;} ());
   }
 }
 //}
 
-== この章のまとめ
+== Summary of this chapter
 
- * Forwarding Referenceを使う場合はオーバーロードに型制約を設ける
- * 新しい機能を使う前に、@<code>{cppreference.com}で一度調べる
- * constexpr ifで@<code>{static_assert}を使う場合は依存式を使う
+ * When using Forwarding Reference, set type constraint for overload
+ * Check once with @ <code> {cppreference.com} before using new features
+ * When using @ <code> {static_assert} in constexpr if, use dependency expression
